@@ -82,15 +82,93 @@ def convert_adc_to_kg():    #convert adc to kg (using change in ADC)
     pass
 
 
-#Error calcuation
-def error_in_data():    #determine the error (both instantenous and average) 
-    pass
+#Error approximation 
+def errorInData(sampleA, sampleB):  #determine the error (both instantenous and average)
+    c = []
+    errorC = []    
+    for i in range(len(sampleA)):
+        c.append(abs(sampleA[i] - sampleB[i]))
+        errorC.append(100*c[i]/sampleB[i])
+    avgError = int(abs(100*np.mean(error)))/100
+    return avgError, errorC  #average error, error at each data point 
 
-def stretch_data(): #makes both arrays the same length (used for error calculation)
-    pass
+def stretch_data(sampleAx,sampleAy,sampleBx,sampleBy):    #makes both arrays the same length (used for error calculation)
+    holder_df = pd.DataFrame() 
 
-def interpolate():  #used to stretch data 
-    pass
+    #determine the size of the two samples
+    minM = np.min(sampleBx)
+    minA = np.min(sampleAx)
+    maxM = np.max(sampleBx)
+    maxA = np.max(sampleAx)
+
+    #puts -1 in all low values of the longer array to be replaced
+    if minM >= minA:
+        #print('MTS starts after ARD')
+        for i in range(len(sampleAx)):
+            if sampleAx[i] <= minM:
+                sampleAx[i] = -1
+            else:
+                break
+    else:
+        #print('ARD starts after MTS') 
+        for i in range(len(sampleBx)):
+            if sampleBx[i] <= minA:
+                sampleBx[i] = -1
+            else:
+                break
+    
+    if maxA <= maxM:
+        #print('MTS ends after ARD')
+        for i in range(len(sampleBx)):
+            if sampleBx[i] >= maxA:
+                sampleBx[i] = -1
+    else:
+        #print('ARD ends after MTS')
+        for i in range(len(sampleAx)):
+            if sampleAx[i] >= maxM:
+                sampleAx[i] = -1
+
+    #removes all -1s
+    sampleAx_clean = []
+    sampleBx_clean = []
+    sampleAy_clean = []
+    sampleBy_clean = []
+
+    for i in range(len(sampleAx)):
+        if sampleAx[i] != -1:
+            sampleAx_clean.append(sampleAx[i])
+            sampleAy_clean.append(sampleAy[i])
+    for i in range(len(sampleBx)):
+        if sampleBx[i] != -1:
+            sampleBx_clean.append(sampleBx[i])
+            sampleBy_clean.append(sampleBy[i])
+
+
+    #find the smaller sample
+    new_len = min(len(sampleAx_clean),len(sampleBx_clean))
+
+    sampleAresize_df = pd.DataFrame() 
+    sampleBresize_df = pd.DataFrame() 
+
+    sampleAresize_df[0] = sampleAx_clean 
+    sampleAresize_df[1] = sampleAy_clean 
+    sampleBresize_df[0] = sampleBx_clean 
+    sampleBresize_df[1] = sampleBy_clean 
+
+    #new_len = int(len(toResize_df)*1.7) 
+    holder_df[0] = np.arange(0,new_len,1)
+    
+    #np.interp(np.linspace(0, n - 1, num=new_len), np.arange(n), toResize_df)
+    holder_df[1] = interp1d(sampleAresize_df[0], new_len)
+    holder_df[2] = interp1d(sampleAresize_df[1], new_len)
+    holder_df[3] = interp1d(sampleBresize_df[0], new_len)
+    holder_df[4] = interp1d(sampleBresize_df[1], new_len)
+
+    return holder_df[1:]    #Ax, Ay, Bx, By
+
+def interpolate(array: np.ndarray, new_len: int) -> np.ndarray: #used in stretch data
+    la = len(array)
+    return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
 
 
 #Output
@@ -100,9 +178,11 @@ def plot_r():   #plot only the raw data
 def plot_r_and_f(): #plot both raw and filtered data
     pass
 
-def open_output_in_folder():    #opens the folder where data was saved 
-    pass
-
+def open_output_in_folder(loc):    #opens the folder where data was saved 
+    pf = pathlib.Path(f'{loc}')
+    runLf = f'/{pathlib.Path(*pf.parts[3:])}'   #trims address to only include what is relevent for windows address 
+    runWf = pathlib.PureWindowsPath(runLf)      #converts to windows path 
+    proc = subprocess.Popen(['explorer.exe', runWf])
 
 
 if __name__ == "__main__":  
