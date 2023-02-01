@@ -30,7 +30,7 @@ def main():
     pass
 
 
-#Import data
+#TODO Import data
 def import_arduino_data(arduinoDataFile,ardSepBy):  #get arduino data from CSV file
     #put the data into a pandas dataframe
     arduino_data_df = pd.read_csv(arduinoDataFile, sep=ardSepBy, header=1, low_memory=False)
@@ -68,18 +68,29 @@ def import_mts_data(mtsDataFile,mtsSepBy,mtsTimeShift,areaRatio):  #get mts data
     return MTS_df[1:], mts_data_freq #time (hours) & mts applied laoding (kg), mts sample frequency
 
 
-#Determine if there was a change in loading 
+#TODO Determine if there was a change in loading 
 def detect_change_in_load():    #determine if there was a change in loading 
     pass
 
-def take_derivative():  #run again for 2nd derivative 
-    pass
+def take_first_derivative(time, data):  #takes the first derivative of a dataset 
+    dataFirstDir = [0]   #creates array ofset by 1 to account for 1st dir offset 
+    for i in range(len(data)-1) #takes the difrence between each two data points and divides by the change in time
+        ithDerivative = (data[i+1] - data[i])/(time[i+1]-time[i])
+        dataFirstDir = dataFirstDir.append(ithDerivative) #appends the derivative array with the next ith derivative 
+    return dataFirstDir
+
+def take_second_derivative(time, dataFirstDir):  #takes the second derivative of a dataset
+    dataSecondDir = [0,0]   #creates array ofset by 2 to account for 2nd dir offset 
+    for i in range(len(dataFirstDir)-1) #takes the difrence between each two data points and divides by the change in time
+        ithDerivative = (dataFirstDir[i+1] - dataFirstDir[i])/(time[i+1]-time[i])
+        dataSecondDir = dataSecondDir.append(ithDerivative) #appends the derivative array with the next ith derivative 
+    return dataSecondDir
 
 def write_new_load():   #based on detect_chagne_in_load, write new loading 
     pass
 
-def convert_adc_to_kg():    #convert adc to kg (using change in ADC)
-    pass
+def convert_adc_to_kg(adcData):    #convert adc to kg (using change in ADC)
+    return adcData
 
 
 #Error approximation 
@@ -93,8 +104,6 @@ def errorInData(sampleA, sampleB):  #determine the error (both instantenous and 
     return avgError, errorC  #average error, error at each data point 
 
 def stretch_data(sampleAx,sampleAy,sampleBx,sampleBy):    #makes both arrays the same length (used for error calculation)
-    holder_df = pd.DataFrame() 
-
     #determine the size of the two samples
     minM = np.min(sampleBx)
     minA = np.min(sampleAx)
@@ -155,10 +164,9 @@ def stretch_data(sampleAx,sampleAy,sampleBx,sampleBy):    #makes both arrays the
     sampleBresize_df[0] = sampleBx_clean 
     sampleBresize_df[1] = sampleBy_clean 
 
-    #new_len = int(len(toResize_df)*1.7) 
+
+    holder_df = pd.DataFrame() 
     holder_df[0] = np.arange(0,new_len,1)
-    
-    #np.interp(np.linspace(0, n - 1, num=new_len), np.arange(n), toResize_df)
     holder_df[1] = interp1d(sampleAresize_df[0], new_len)
     holder_df[2] = interp1d(sampleAresize_df[1], new_len)
     holder_df[3] = interp1d(sampleBresize_df[0], new_len)
@@ -171,7 +179,7 @@ def interpolate(array: np.ndarray, new_len: int) -> np.ndarray: #used in stretch
     return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
 
 
-#Output
+#TODO Output
 def plot_r():   #plot only the raw data
     pass
 
