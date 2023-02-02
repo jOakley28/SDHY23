@@ -15,8 +15,8 @@ Senior Design - Hyster Yale Axial Load Monitoring
 * Redumentry error calculation
 
 # Pre-Processing Algorithm (deployed to hardware)
-## Arduino 1.0
-* Collects and writes raw to CSV for post-processing
-
 ## Arduino 2.0
 * Conducts onboard high and low pass filtering
+
+## Arduino 1.0
+* Collects and writes raw to CSV for post-processing
