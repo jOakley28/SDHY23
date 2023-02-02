@@ -14,7 +14,7 @@ Senior Design - Hyster Yale Axial Load Monitoring
 * Noise reduction (fft)
 * Redumentry error calculation
 
-#Pre-Processing Algorithm (deployed to hardware)
+# Pre-Processing Algorithm (deployed to hardware)
 ## Arduino 1.0
 * Collects and writes raw to CSV for post-processing
 
