@@ -103,7 +103,7 @@ def correct_mts_data(rawMtsData):
     rawMtsData_df = rawMtsData
     blockArea = blockLength*blockWidth    #difined by user (in^2)
     sensorArea = 0.785852   #from data sheet (in^2)
-    areaRatio = sensorArea/blockArea
+    areaRatio = blockArea/sensorArea
     nToKg = -1/9.806    #downward force (N) (in the negative direction) to load (kg)
     corFactor = nToKg/areaRatio
     correctedMtsData = rawMtsData.apply(lambda x: x*corFactor)
