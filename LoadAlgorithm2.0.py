@@ -19,8 +19,6 @@ from argparse import ArgumentParser  # TODO
 from datetime import date
 import pathlib
 import warnings
-import gooey
-
 
 # SETUP
 plt.rcParams["figure.figsize"] = [20, 12]  # sets figure size
@@ -48,7 +46,7 @@ def main_process():
     mtsData[1] = correct_mts_data(mtsData[1])  # corrects mts (-N to +kg) (area ratio)
 
     # calculate percent error
-    print("Estimating error...")
+    print("Estimating error...\n")
     rawAdcDataCopy = rawAdcData.copy()
     correctedAdcDataCopy = correctedAdcData.copy()
     mtsDataCopy = mtsData.copy()
@@ -71,6 +69,7 @@ def main_process():
         rEbtw,
         rawMts_str,
     )  # plot raw ADC and MTS
+
     plot_two(
         correctedAdcDataCopy,
         mtsDataCopy,
@@ -80,7 +79,9 @@ def main_process():
         cEbtw,
         correctedMts_str,
     )  # plot corrected ADC and MTS
-    # plot_three() #TODO
+
+    plot_three(rawAdcDataCopy, correctedAdcDataCopy, mtsDataCopy, rawAdcFreq, rAvgError, cAvgError, rawcorrectedMts_str) #plot raw and corrected ADC along with MTS 
+
     print("Plotting complete")
 
 
@@ -303,12 +304,8 @@ def plot_two(
         mts[0], mts[1], color="r", linewidth=1.0, alpha=0.7, label=f"Applied MTS"
     )  # MTS load
     plt.plot(
-        ard[0],
-        ard[1],
-        color="c",
-        linewidth=0.8,
-        label=f"Raw ({int(avgArdError*10)/10}%)",
-    )  # raw load
+        ard[0], ard[1], color="c", linewidth=0.8, label=f"Raw ({int(avgArdError*10)/10}%)"
+    )  # Arduino load
 
     plt.minorticks_on()
     plt.grid(visible=None, which="major", linestyle="-", linewidth="1", axis="both")
@@ -329,11 +326,40 @@ def plot_two(
     plt.fill_between(
         errorBtw[0], errorBtw[1], errorBtw[2], color="gray", alpha=0.2, label="error"
     )
+
     plt.savefig(address[1])
     plt.cla()
 
 
-def plot_three():  # TODO plots three curves
+def plot_three(rArd, cArd, mts, ard_freq, rAvgArdError, cAvgArdError, address):  # TODO plots three curves
+    plt.plot(
+    mts[0], mts[1], color="r", linewidth=1.0, alpha=0.7, label=f"Applied MTS"
+    )  # MTS load
+    plt.plot(
+        rArd[0], rArd[1], color="c", linewidth=0.8, label=f"Raw ({int(rAvgArdError*10)/10}%)"
+    )  # raw arduino load
+    plt.plot(
+    cArd[0], cArd[1], color="k", linewidth=0.8, label=f"Raw ({int(cAvgArdError*10)/10}%)"
+    )  # corrected arduino load
+
+    plt.minorticks_on()
+    plt.grid(visible=None, which="major", linestyle="-", linewidth="1", axis="both")
+    plt.grid(visible=None, which="minor", linestyle="--", linewidth="0.7", axis="y")
+
+    plt.xlim(rArd.iloc[0, 0], rArd.iloc[len(rArd) - 1, 0])
+    plt.autoscale(False, axis="y")
+    plt.ylim(0, 110)
+    plt.yticks(np.arange(0, 111, step=10))
+    plt.legend()
+
+    plt.title(f"{address[0]}\n{testInfo}")
+    plt.title(f"@{int(ard_freq)}hz - latency* 0s", loc="right", color="g")
+    # plt.title(f'Circuit {circuitType}',loc='left') #TODO add both circut profiles if nessacary
+    plt.xlabel("Time (hrs)")
+    plt.ylabel("Load (kg)")
+
+    plt.savefig(address[1])
+    plt.cla()
     pass
 
 
@@ -388,7 +414,7 @@ def file_names():  # creates chart titles and file names
 
 if __name__ == "__main__":
     # TODO add argument parser
-
+    
     # arduino
     arduinoDataFile = "log6/LOG_6.txt"
     ardSepBy = "\t"
