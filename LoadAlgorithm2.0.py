@@ -26,42 +26,35 @@ plt.rcParams.update({'font.size': 18})      #sets font size
 warnings.filterwarnings('ignore')           #hide warnings
 
 
-def main():
+#main process 
+def main_process():
     #handle raw ADC data
     rawAdcData = pd.DataFrame()
-    print('Getting arduino data...')
     rawAdcData, rawAdcFreq = import_arduino_data(arduinoDataFile,ardSepBy)    #import arduino data
-    print(f'{len(rawAdcData[0])} rows\n')  #prints total number of rows in datafile
 
-    correctedAdcData = detect_change_in_load(rawAdcData)    #look for change in ADC and write new data accordingly
-    correctedAdcData[1] = convert_adc_to_kg(correctedAdcData[1])   #TODO check if legal
-    #ADC DATA SHOULD NOW BE IN KG
+    #TODO look for change in adc
+    correctedAdcData = detect_change_in_load(rawAdcData)  
+    correctedAdcData[1] = convert_adc_to_kg(correctedAdcData[1])    #converts ADC to kg
 
 
     #handle mts data
     mtsData = pd.DataFrame()
-    print('Gettting mts data...')
     mtsData, mtsFreq = import_mts_data(mtsDataFile,mtsSepBy,mtsTimeShift) #imports mts data
-    print(f'{len(mtsData[0])} rows\n')  #prints total number of rows in datafile
     mtsData[1] = correct_mts_data(mtsData[1]) #corrects mts (-N to +kg) (area ratio)
 
 
     #calculate percent error
+    print('Estimating error...')
     rawAdcDataCopy = rawAdcData.copy()
     correctedAdcDataCopy = correctedAdcData.copy()
     mtsDataCopy = mtsData.copy()
-
-    print('Estimating error...')
     rAdcMtsError, rAvgError, rEbtw = errorCalculation(rawAdcData, mtsData)  #raw ADC vs MTS precent error 
     cAdcMtsError, cAvgError, cEbtw = errorCalculation(correctedAdcData, mtsData)  #corrected ADC vs MTS precent error 
 
 
-    #create file names
-    print('Generating file names...\n')
-    rawMts_str, correctedMts_str, rawcorrectedMts_str = file_names(saveLocation)
-
     #plot data
     print('Plotting data...')
+    rawMts_str, correctedMts_str, rawcorrectedMts_str = file_names()
     plot_two(rawAdcDataCopy, mtsDataCopy, rawAdcFreq, rAvgError, rAdcMtsError, rEbtw, rawMts_str)   #plot raw ADC and MTS 
     plot_two(correctedAdcDataCopy, mtsDataCopy, rawAdcFreq, cAvgError, cAdcMtsError, cEbtw, correctedMts_str)   #plot corrected ADC and MTS 
     #plot_three() #TODO
@@ -70,6 +63,7 @@ def main():
 
 #Import data
 def import_arduino_data(arduinoDataFile,ardSepBy):  #get arduino data from CSV file
+    print('Getting arduino data...')
     #put the data into a pandas dataframe
     arduino_data_df = pd.read_csv(arduinoDataFile, sep=ardSepBy, header=None, low_memory=False)
 
@@ -78,12 +72,12 @@ def import_arduino_data(arduinoDataFile,ardSepBy):  #get arduino data from CSV f
     arduino_data_dt = (arduino_data_df.iloc[4,0] - arduino_data_df.iloc[0,0])/5 #determine dt based on change in time of the first four time steps
     arduino_data_freq = int(1/(3600*arduino_data_dt))
 
-    #for testing
-    #print(f'Arduino sampeling frequency {arduino_data_freq}hz')   #prints the sampling frequency in hz
-    #input(arduino_data_df[:2]) #prints first 2 rows of arduino data
+    print(f'{len(arduino_data_df[0])} rows\n')  #prints total number of rows in datafile
     return arduino_data_df, arduino_data_freq #time (hours) & ADC (kg), arduino sample frequency
 
 def import_mts_data(mtsDataFile,mtsSepBy,mtsTimeShift):  #get mts data from CSV file
+    print('Gettting mts data...')
+    #put the data into a pandas dataframe
     mts_data_df = pd.read_csv(mtsDataFile, sep=mtsSepBy, header=None, low_memory=False)
     
     mts_data_dt = (mts_data_df.iloc[4,0] - mts_data_df.iloc[0,0])/5    #determine dt based on change in time of the first four time steps
@@ -93,9 +87,7 @@ def import_mts_data(mtsDataFile,mtsSepBy,mtsTimeShift):  #get mts data from CSV 
     mts_data_df[0] = mts_data_df[0].apply(lambda x: x + mtsTimeShift)   #shift data right or left to account for inconsistant start times between devices - SECONDS!!
     mts_data_df[0] = mts_data_df[0].apply(lambda x: ((x/60)/60))  #converts column 0 from seconds to hours
     
-    #for testing
-    #print(f'MTS sampeling frequency: {mts_data_freq}hz')
-    #input(mts_data_df[:2]) #prints first 2 row of mts data
+    print(f'{len(mts_data_df[0])} rows\n')  #prints total number of rows in datafile
 
     return mts_data_df[0:], mts_data_freq #time (hours) & mts applied laoding (kg), mts sample frequency
 
@@ -235,8 +227,8 @@ def lin_interpolate(array: np.ndarray, new_len: int) -> np.ndarray: #used in str
     return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
 
 
-#TODO Output
-def plot_two(ard, mts, ard_freq, avgArdError, ardError, errorBtw, address):   #2 col df where 0: time, 1: data
+#Output
+def plot_two(ard, mts, ard_freq, avgArdError, ardError, errorBtw, address): #plots two curves and fills between
     plt.plot(mts[0],mts[1],color='r',linewidth=1.0,alpha=0.7,label=f'Applied MTS')    #MTS load
     plt.plot(ard[0],ard[1],color='c',linewidth=0.8,label=f'Raw ({int(avgArdError*10)/10}%)')      #raw load
 
@@ -260,27 +252,53 @@ def plot_two(ard, mts, ard_freq, avgArdError, ardError, errorBtw, address):   #2
     plt.savefig(address[1])
     plt.cla() 
 
-def plot_three(): #plot both raw and filtered data
+def plot_three():   #TODO plots three curves
     pass
 
-def open_output_in_folder(saveLocation):    #opens the folder where data was saved 
-    pf = pathlib.Path(f'{saveLocation}')
-    runLf = f'/{pathlib.Path(*pf.parts[3:])}'   #trims address to only include what is relevent for windows address 
-    runWf = pathlib.PureWindowsPath(runLf)      #converts to windows path 
-    proc = subprocess.Popen(['explorer.exe', runWf])
+def create_configure_save_dir():    #handles save location foler and copies datafiles
+    #creates save folder if necessary 
+    if not os.path.exists(saveLocation):
+        os.makedirs(saveLocation)
+        print(f'created \"{saveLocation}\" dir\n')
 
-def file_names(saveLocation):
+    #checks if arduino datafile exists
+    if not os.path.isfile(arduinoDataFile):
+        print("Data file not found")
+        exit(1)
+
+    #checks if MTS datafile exists
+    if not os.path.isfile(mtsDataFile):
+        print("MTS file not found")
+        exit(1)       
+
+    #copies datafile to save location
+    try:
+        shutil.copy(arduinoDataFile, saveLocation)
+        print(f'Copied arduino datafile into \"{saveLocation}\" directory')
+    except shutil.SameFileError:
+        print(f'Arduino datafile already exists in "{saveLocation}\" directory')
+
+    #copies mts file to datalocation  
+    try:
+        shutil.copy(mtsDataFile, saveLocation)
+        print(f'Copied MTS file into \"{saveLocation}\" directory\n')
+    except shutil.SameFileError:
+        print(f'MTS file already exists in "{saveLocation}\" directory\n')
+
+    pass
+
+def file_names():   #creates chart titles and file names
     #plot with raw with mts data
-    rawMts = [f'raw with mts',' ']
-    rawMts[1] = f'{saveLocation}/{rawMts[0]}.png'
+    rawMts = [f'raw arduino over mts data',' ']
+    rawMts[1] = f'{saveLocation}/PLT {rawMts[0]}.png'
 
     #plot with fixed and mts data
-    fixedMts = [f'corrected with mts',' ']
-    fixedMts[1] = f'{saveLocation}/{fixedMts[0]}.png'
+    fixedMts = [f'corrected arduino over mts data',' ']
+    fixedMts[1] = f'{saveLocation}/PLT {fixedMts[0]}.png'
 
     #plot with raw, fixed, and mts data
-    rawFixedMts = [f'raw and corrected with mts',' ']
-    rawFixedMts[1] = f'{saveLocation}/{rawFixedMts[0]}.png'
+    rawFixedMts = [f'raw and corrected arduino over mts data',' ']
+    rawFixedMts[1] = f'{saveLocation}/PLT {rawFixedMts[0]}.png'
 
     return rawMts, fixedMts, rawFixedMts
 
@@ -301,26 +319,8 @@ if __name__ == "__main__":
 
     #saving
     testInfo = 'building algorithm'
-    saveLocation  = 'log6/TEST DIR (log)'
+    saveLocation  = 'log6'
+ 
 
-    #checks if arduino datafile exists
-    if not os.path.isfile(arduinoDataFile):
-        print("Data file not found")
-        exit(1)
-
-    #checks if MTS datafile exists
-    if not os.path.isfile(mtsDataFile):
-        print("MTS file not found")
-        exit(1)       
-
-    #creates save folder if necessary 
-    if not os.path.exists(saveLocation):
-        os.makedirs(saveLocation)
-        print(f'created \"{saveLocation}\" dir\n')
-
-    #run main loop
-    main()
-
-    if True == False:
-        #open folder where plots are saved
-        open_output_in_folder(saveLocation)
+    create_configure_save_dir() #creates and configures save directories
+    main_process()  #main process
