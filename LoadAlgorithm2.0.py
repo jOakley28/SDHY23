@@ -19,6 +19,8 @@ from argparse import ArgumentParser  # TODO
 from datetime import date
 import pathlib
 import warnings
+from gooey import Gooey
+
 
 # SETUP
 plt.rcParams["figure.figsize"] = [20, 12]  # sets figure size
@@ -59,7 +61,7 @@ def main_process():
 
     # plot data
     print("Plotting data...")
-    rawMts_str, correctedMts_str, rawcorrectedMts_str = file_names()
+    rawMts_str, correctedMts_str, rawcorrectedMts_str = new_file_names()
     plot_two(
         rawAdcDataCopy,
         mtsDataCopy,
@@ -80,7 +82,15 @@ def main_process():
         correctedMts_str,
     )  # plot corrected ADC and MTS
 
-    plot_three(rawAdcDataCopy, correctedAdcDataCopy, mtsDataCopy, rawAdcFreq, rAvgError, cAvgError, rawcorrectedMts_str) #plot raw and corrected ADC along with MTS 
+    plot_three(
+        rawAdcDataCopy,
+        correctedAdcDataCopy,
+        mtsDataCopy,
+        rawAdcFreq,
+        rAvgError,
+        cAvgError,
+        rawcorrectedMts_str,
+    )  # plot raw and corrected ADC along with MTS
 
     print("Plotting complete")
 
@@ -304,7 +314,11 @@ def plot_two(
         mts[0], mts[1], color="r", linewidth=1.0, alpha=0.7, label=f"Applied MTS"
     )  # MTS load
     plt.plot(
-        ard[0], ard[1], color="c", linewidth=0.8, label=f"Raw ({int(avgArdError*10)/10}%)"
+        ard[0],
+        ard[1],
+        color="c",
+        linewidth=0.8,
+        label=f"Raw ({int(avgArdError*10)/10}%)",
     )  # Arduino load
 
     plt.minorticks_on()
@@ -331,15 +345,25 @@ def plot_two(
     plt.cla()
 
 
-def plot_three(rArd, cArd, mts, ard_freq, rAvgArdError, cAvgArdError, address):  # TODO plots three curves
+def plot_three(
+    rArd, cArd, mts, ard_freq, rAvgArdError, cAvgArdError, address
+):  # TODO plots three curves
     plt.plot(
-    mts[0], mts[1], color="r", linewidth=1.0, alpha=0.7, label=f"Applied MTS"
+        mts[0], mts[1], color="r", linewidth=1.0, alpha=0.7, label=f"Applied MTS"
     )  # MTS load
     plt.plot(
-        rArd[0], rArd[1], color="c", linewidth=0.8, label=f"Raw ({int(rAvgArdError*10)/10}%)"
+        rArd[0],
+        rArd[1],
+        color="c",
+        linewidth=0.8,
+        label=f"Raw ({int(rAvgArdError*10)/10}%)",
     )  # raw arduino load
     plt.plot(
-    cArd[0], cArd[1], color="k", linewidth=0.8, label=f"Raw ({int(cAvgArdError*10)/10}%)"
+        cArd[0],
+        cArd[1],
+        color="k",
+        linewidth=0.8,
+        label=f"Raw ({int(cAvgArdError*10)/10}%)",
     )  # corrected arduino load
 
     plt.minorticks_on()
@@ -382,21 +406,21 @@ def create_configure_save_dir():  # handles save location foler and copies dataf
     # copies datafile to save location
     try:
         shutil.copy(arduinoDataFile, saveLocation)
-        print(f'Copied arduino datafile into "{saveLocation}" directory')
+        os.rename(f'{saveLocation}/{arduinoDataFile}', f'{saveLocation}/DF Arduino ({testInfo})')
+        print(f'Copied arduino datafile into "{saveLocation}" directory as "MTS Data File ({testInfo})"')
     except shutil.SameFileError:
         print(f'Arduino datafile already exists in "{saveLocation}" directory')
 
     # copies mts file to datalocation
     try:
         shutil.copy(mtsDataFile, saveLocation)
-        print(f'Copied MTS file into "{saveLocation}" directory\n')
+        os.rename(f'{saveLocation}/{mtsDataFile}', f'{saveLocation}/DF MTS ({testInfo})')
+        print(f'Copied MTS file into "{saveLocation}" directory as "MTS Data File ({testInfo})"\n')
     except shutil.SameFileError:
         print(f'MTS file already exists in "{saveLocation}" directory\n')
 
-    pass
 
-
-def file_names():  # creates chart titles and file names
+def new_file_names():  # creates chart titles and file names
     # plot with raw with mts data
     rawMts = [f"raw arduino over mts data", " "]
     rawMts[1] = f"{saveLocation}/PLT {rawMts[0]}.png"
@@ -412,23 +436,102 @@ def file_names():  # creates chart titles and file names
     return rawMts, fixedMts, rawFixedMts
 
 
-if __name__ == "__main__":
-    # TODO add argument parser
+@Gooey(advanced=1,default_size=(610, 650))
+def argparse():
+    # argument parser 
+    parser = ArgumentParser()
+    # arduino datafile
+    parser.add_argument(  # Arduino datafile location
+        "-a",
+        "--ard",
+        dest="Arduino",
+        help="Arduino datafile location",
+        default='DF Arduino (<>)'
+    )  # log6/LOG_6.txt
+    parser.add_argument(  # Arduino datafile delimiter
+        "-d",
+        "--ardSep",
+        dest="ArduinoSep",
+        help="Arduino datafile delimiter",
+        default="\t",
+        type=str
+    )
+    # MTS datafile
+    parser.add_argument(  # MTS datafile location
+        "-m",
+        "--mts",
+        dest="MTS",
+        help="MTS datafile location",
+        default='DF MTS (<>)'
+    )  # log6/hy_test1_glue6.txt
+    parser.add_argument(  # MTS datafile delimiter
+        "-t",
+        "--mtsSep",
+        dest="mtsSep",
+        help="MTS datafile delimiter",
+        default="\t",
+    )
+    # saving
+    parser.add_argument(  # save location
+        "-l",
+        "--saveLocation",
+        dest="saveLocation",
+        help="Save folder",
+        default=''
+    ) # log6/
+    parser.add_argument(  # test info
+        "-i", "--testInfo", dest="testInfo", help="Test info", default="script testing"
+    )
+    # tuning
+    parser.add_argument(  # MTS time shift
+        "-s",
+        "--mtsShift",
+        dest="mtsShift",
+        help="MTS time shift (in seconds)",
+        default="0.00",
+        type=float
+    )
+    parser.add_argument(  # Block length and width
+        "-A",
+        "--blockArea",
+        dest="blockArea",
+        help="Block length and width (in inches)",
+        nargs="+",
+        default=[1, 1],
+        type=float
+    )
+
+
+    args = parser.parse_args()
     
     # arduino
-    arduinoDataFile = "log6/LOG_6.txt"
-    ardSepBy = "\t"
-
+    arduinoDataFile = args.Arduino
+    ardSepBy = args.ArduinoSep
     # MTS
-    mtsDataFile = "log6/hy_test1_glue6.txt"
-    mtsSepBy = "\t"
-    mtsTimeShift = 0.00  # in seconds
-    blockLength = 2.5  # in inches
-    blockWidth = 2.5  # in inches
-
+    mtsDataFile = args.MTS
+    mtsSepBy = args.mtsSep
+    mtsTimeShift = args.mtsShift
+    blockLength, blockWidth = args.blockArea
     # saving
-    testInfo = "building algorithm"
-    saveLocation = "log6"
+    testInfo = args.testInfo
+    saveLocation = args.saveLocation
+
+    return arduinoDataFile, ardSepBy, mtsDataFile, mtsSepBy, mtsTimeShift, blockLength, blockWidth, testInfo, saveLocation 
+
+
+if __name__ == "__main__":
+    arduinoDataFile, ardSepBy, mtsDataFile, mtsSepBy, mtsTimeShift, blockLength, blockWidth, testInfo, saveLocation  = argparse()
+
+    #check if paths were provided
+    if arduinoDataFile == 'DF Arduino (<>)':
+        print('No arduino datafile provided...')
+        exit(1)
+    if  mtsDataFile == 'DF MTS (<>)':
+        print('No MTS datafile provided...')
+        exit(1)
+    if saveLocation == '':
+        print('No savelocation provided...')
+        exit(1)
 
     create_configure_save_dir()  # creates and configures save directories
     main_process()  # main process
