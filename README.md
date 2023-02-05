@@ -7,6 +7,7 @@ Senior Design - Hyster Yale Axial Load Monitoring
 * Raw ADC to load (kg) conversion 
 * Refined error calculation
 * Visual representations of prosessed siginal 
+* GUI
 
 ## [LoadAlgorithm v1.16](https://github.com/jOakley28/SDHY23/blob/main/LoadAlgorithm1.16.py)
 * Non-linear ADC to load (kg) conversion
