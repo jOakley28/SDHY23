@@ -332,7 +332,7 @@ def plot_two(
     plt.legend()
 
     plt.title(f"{address[0]}\n{testInfo}")
-    plt.title(f"@{int(ard_freq)}hz - latency* 0s", loc="right", color="g")
+    plt.title(f"@{int(ard_freq)}hz", loc="right", color="g")
     # plt.title(f'Circuit {circuitType}',loc='left') #TODO add both circut profiles if nessacary
     plt.xlabel("Time (hrs)")
     plt.ylabel("Load (kg)")
@@ -377,7 +377,7 @@ def plot_three(
     plt.legend()
 
     plt.title(f"{address[0]}\n{testInfo}")
-    plt.title(f"@{int(ard_freq)}hz - latency* 0s", loc="right", color="g")
+    plt.title(f"@{int(ard_freq)}hz", loc="right", color="g")
     # plt.title(f'Circuit {circuitType}',loc='left') #TODO add both circut profiles if nessacary
     plt.xlabel("Time (hrs)")
     plt.ylabel("Load (kg)")
@@ -406,39 +406,48 @@ def create_configure_save_dir():  # handles save location foler and copies dataf
     # copies datafile to save location
     try:
         shutil.copy(arduinoDataFile, saveLocation)
-        os.rename(f'{saveLocation}/{arduinoDataFile}', f'{saveLocation}/DF Arduino ({testInfo})')
-        print(f'Copied arduino datafile into "{saveLocation}" directory as "MTS Data File ({testInfo})"')
+        os.rename(
+            f"{saveLocation}/{arduinoDataFile}",
+            f"{saveLocation}/DF Arduino ({testInfo}).txt",
+        )
+        print(
+            f'Copied arduino datafile into "{saveLocation}" directory as "MTS Data File ({testInfo})"'
+        )
     except shutil.SameFileError:
         print(f'Arduino datafile already exists in "{saveLocation}" directory')
 
     # copies mts file to datalocation
     try:
         shutil.copy(mtsDataFile, saveLocation)
-        os.rename(f'{saveLocation}/{mtsDataFile}', f'{saveLocation}/DF MTS ({testInfo})')
-        print(f'Copied MTS file into "{saveLocation}" directory as "MTS Data File ({testInfo})"\n')
+        os.rename(
+            f"{saveLocation}/{mtsDataFile}", f"{saveLocation}/DF MTS ({testInfo}).txt"
+        )
+        print(
+            f'Copied MTS file into "{saveLocation}" directory as "MTS Data File ({testInfo})"\n'
+        )
     except shutil.SameFileError:
         print(f'MTS file already exists in "{saveLocation}" directory\n')
 
 
 def new_file_names():  # creates chart titles and file names
     # plot with raw with mts data
-    rawMts = [f"raw arduino over mts data", " "]
-    rawMts[1] = f"{saveLocation}/PLT {rawMts[0]}.png"
+    rawMts = [f"Raw Arduino Data vs MTS Data", " "]
+    rawMts[1] = f"{saveLocation}/PLT {rawMts[0]} ({testInfo}).png"
 
     # plot with fixed and mts data
-    fixedMts = [f"corrected arduino over mts data", " "]
-    fixedMts[1] = f"{saveLocation}/PLT {fixedMts[0]}.png"
+    fixedMts = [f"Corrected Arduino Data vs MTS Data", " "]
+    fixedMts[1] = f"{saveLocation}/PLT {fixedMts[0]} ({testInfo}).png"
 
     # plot with raw, fixed, and mts data
-    rawFixedMts = [f"raw and corrected arduino over mts data", " "]
-    rawFixedMts[1] = f"{saveLocation}/PLT {rawFixedMts[0]}.png"
+    rawFixedMts = [f"Raw and Corrected Arduino Data vs MTS Data", " "]
+    rawFixedMts[1] = f"{saveLocation}/PLT {rawFixedMts[0]} ({testInfo}).png"
 
     return rawMts, fixedMts, rawFixedMts
 
 
-@Gooey(advanced=1,default_size=(610, 650))
+@Gooey(advanced=1, default_size=(610, 650))
 def argparse():
-    # argument parser 
+    # argument parser
     parser = ArgumentParser()
     # arduino datafile
     parser.add_argument(  # Arduino datafile location
@@ -446,7 +455,7 @@ def argparse():
         "--ard",
         dest="Arduino",
         help="Arduino datafile location",
-        default='DF Arduino (<>)'
+        default="DF Arduino (<>)",
     )  # log6/LOG_6.txt
     parser.add_argument(  # Arduino datafile delimiter
         "-d",
@@ -454,15 +463,11 @@ def argparse():
         dest="ArduinoSep",
         help="Arduino datafile delimiter",
         default="\t",
-        type=str
+        type=str,
     )
     # MTS datafile
     parser.add_argument(  # MTS datafile location
-        "-m",
-        "--mts",
-        dest="MTS",
-        help="MTS datafile location",
-        default='DF MTS (<>)'
+        "-m", "--mts", dest="MTS", help="MTS datafile location", default="DF MTS (<>)"
     )  # log6/hy_test1_glue6.txt
     parser.add_argument(  # MTS datafile delimiter
         "-t",
@@ -473,12 +478,8 @@ def argparse():
     )
     # saving
     parser.add_argument(  # save location
-        "-l",
-        "--saveLocation",
-        dest="saveLocation",
-        help="Save folder",
-        default=''
-    ) # log6/
+        "-l", "--saveLocation", dest="saveLocation", help="Save folder", default=""
+    )  # log6/
     parser.add_argument(  # test info
         "-i", "--testInfo", dest="testInfo", help="Test info", default="script testing"
     )
@@ -489,7 +490,7 @@ def argparse():
         dest="mtsShift",
         help="MTS time shift (in seconds)",
         default="0.00",
-        type=float
+        type=float,
     )
     parser.add_argument(  # Block length and width
         "-A",
@@ -497,13 +498,12 @@ def argparse():
         dest="blockArea",
         help="Block length and width (in inches)",
         nargs="+",
-        default=[1, 1],
-        type=float
+        default=[4.5, 1.375],
+        type=float,
     )
 
-
     args = parser.parse_args()
-    
+
     # arduino
     arduinoDataFile = args.Arduino
     ardSepBy = args.ArduinoSep
@@ -516,22 +516,44 @@ def argparse():
     testInfo = args.testInfo
     saveLocation = args.saveLocation
 
-    return arduinoDataFile, ardSepBy, mtsDataFile, mtsSepBy, mtsTimeShift, blockLength, blockWidth, testInfo, saveLocation 
+    return (
+        arduinoDataFile,
+        ardSepBy,
+        mtsDataFile,
+        mtsSepBy,
+        mtsTimeShift,
+        blockLength,
+        blockWidth,
+        testInfo,
+        saveLocation,
+    )
 
 
 if __name__ == "__main__":
-    arduinoDataFile, ardSepBy, mtsDataFile, mtsSepBy, mtsTimeShift, blockLength, blockWidth, testInfo, saveLocation  = argparse()
+    print("- - - - -  LoadAlgorythem2.0.py  - - - - ")
+    (   #makes vars from argparse global
+        arduinoDataFile,
+        ardSepBy,
+        mtsDataFile,
+        mtsSepBy,
+        mtsTimeShift,
+        blockLength,
+        blockWidth,
+        testInfo,
+        saveLocation,
+    ) = argparse()
 
-    #check if paths were provided
-    if arduinoDataFile == 'DF Arduino (<>)':
-        print('No arduino datafile provided...')
+    # check if paths were provided
+    if arduinoDataFile == "DF Arduino (<>)":
+        print("No arduino datafile provided...")
         exit(1)
-    if  mtsDataFile == 'DF MTS (<>)':
-        print('No MTS datafile provided...')
+    if mtsDataFile == "DF MTS (<>)":
+        print("No MTS datafile provided...")
         exit(1)
-    if saveLocation == '':
-        print('No savelocation provided...')
+    if saveLocation == "":
+        print("No savelocation provided...")
         exit(1)
 
     create_configure_save_dir()  # creates and configures save directories
     main_process()  # main process
+    print("- - - - - - - - - - - - - - - - - - - - -")
