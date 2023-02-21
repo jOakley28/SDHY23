@@ -63,17 +63,16 @@ def main_process():
         arduinoDataFile, ardSepBy
     )  # import arduino data
 
-
     # detect change in load based on ADC data
-    rawAdcDataCopy = rawAdcData.copy()  # creates a copy of raw ADC data for error calculation 
-    correctedAdcData = detect_change_in_load(rawAdcDataCopy)    #looks for change in load
+    rawAdcDataCopy = (
+        rawAdcData.copy()
+    )  # creates a copy of raw ADC data for error calculation
+    correctedAdcData = detect_change_in_load(rawAdcDataCopy)  # looks for change in load
     correctedAdcDataCopy = correctedAdcData.copy()  # copy for error calculation
 
-
     # convert ADC value to kg
-    rawAdcData[1] = convert_adc_to_kg(rawAdcData[1])  
-    correctedAdcData[1] = convert_adc_to_kg(correctedAdcData[1])  
-    
+    rawAdcData[1] = convert_adc_to_kg(rawAdcData[1])
+    correctedAdcData[1] = convert_adc_to_kg(correctedAdcData[1])
 
     # handle mts data
     mtsData = pd.DataFrame()
@@ -81,11 +80,11 @@ def main_process():
         mtsDataFile, mtsSepBy, mtsTimeShift
     )  # imports mts data
     mtsData[1] = correct_mts_data(mtsData[1])  # corrects mts (-N to +kg) (area ratio)
-    mtsDataCopy = mtsData.copy()    #creates a copy of mts data for error calculation 
+    mtsDataCopy = mtsData.copy()  # creates a copy of mts data for error calculation
 
     # convert ADC value to kg
-    rawAdcDataCopy[1] = convert_adc_to_kg(rawAdcDataCopy[1])  
-    correctedAdcDataCopy[1] = convert_adc_to_kg(correctedAdcDataCopy[1])  
+    rawAdcDataCopy[1] = convert_adc_to_kg(rawAdcDataCopy[1])
+    correctedAdcDataCopy[1] = convert_adc_to_kg(correctedAdcDataCopy[1])
 
     # calculate percent error
     print("Estimating error...\n")
@@ -95,7 +94,6 @@ def main_process():
     cAdcMtsError, cAvgError, cEbtw = errorCalculation(
         correctedAdcDataCopy, mtsDataCopy
     )  # corrected ADC vs MTS precent error
-
 
     # plot data
     print("Plotting data...")
@@ -202,24 +200,27 @@ def detect_change_in_load(data):  # determine if there was a change in loading
     detectedAdc = pd.DataFrame()
     detectedAdc[0] = data[0]
     adc_corrected = []
-    
 
     step_size = 30
     for i in range(len(data[1])):
         if i > step_size:
-            time_group_step_size = data[0][i-step_size:i].tolist()
-            data_group_step_size = data[1][i-step_size:i].tolist()
-            first_derv = take_first_derivative(time_group_step_size, data_group_step_size)
+            time_group_step_size = data[0][i - step_size : i].tolist()
+            data_group_step_size = data[1][i - step_size : i].tolist()
+            first_derv = take_first_derivative(
+                time_group_step_size, data_group_step_size
+            )
 
-            if first_derv.mean() < dervThresh and first_derv.mean() > 0:  # if under the derv threshold, use the prev value
-                adc_corrected.append(adc_corrected[i-1])
-            else:                                   # if above the derv threshold, use the current value 
+            if (
+                first_derv.mean() < dervThresh and first_derv.mean() > 0
+            ):  # if under the derv threshold, use the prev value
+                adc_corrected.append(adc_corrected[i - 1])
+            else:  # if above the derv threshold, use the current value
                 adc_corrected.append(data[1][i])
         else:
-            adc_corrected.append(data[1][i])    # add the first value to the list 
+            adc_corrected.append(data[1][i])  # add the first value to the list
     detectedAdc[1] = adc_corrected
     return detectedAdc
-    
+
     """if 2 in data[1]:
         print('Arduino datafile contains 2nd data column')
         for i in range(len(data[1])):
@@ -236,11 +237,13 @@ def take_first_derivative(time, data):  # takes the first derivative of a datase
     dataFirstDir = []  # creates array ofset by 1 to account for 1st dir offset
     dataDerv_df = pd.DataFrame()
     dataDerv_df[0] = []
-    for i in range(len(data)):  # takes the difrence between each two data points and divides by the change in time
+    for i in range(
+        len(data)
+    ):  # takes the difrence between each two data points and divides by the change in time
         if i > 0:
-            ithDerivative = (data[i] - data[i-1]) / (time[i] - time[i-1])
+            ithDerivative = (data[i] - data[i - 1]) / (time[i] - time[i - 1])
             dataFirstDir.append(
-                ithDerivative/3600
+                ithDerivative / 3600
             )  # appends the derivative array with the next ith derivative
     dataDerv_df = pd.DataFrame()
     dataDerv_df[0] = dataFirstDir
@@ -268,7 +271,7 @@ def write_new_load():  # based on detect_chagne_in_load, write new loading
 
 
 def convert_adc_to_kg(adcData):  # TODO convert adc to kg (using change in ADC)
-    #[m, b] = [0.007726, -77.5564]  # circut B profile
+    # [m, b] = [0.007726, -77.5564]  # circut B profile
     [m, b] = [adcSlope, adcOffset]
     adcDataKg = adcData.apply(lambda x: m * x + b)
     return adcDataKg
@@ -381,7 +384,7 @@ def plot_two(
     ard, mts, ard_freq, avgArdError, ardError, errorBtw, address
 ):  # plots two curves and fills between
     if errorPlotBool != False:
-        plt.plot(errorBtw[0], ardError, color = 'k', alpha = 0.7, label=f'Error(t) [%]')
+        plt.plot(errorBtw[0], ardError, color="k", alpha=0.7, label=f"Error(t) [%]")
     plt.plot(
         mts[0], mts[1], color="r", linewidth=1.0, alpha=0.7, label=f"Applied MTS"
     )  # MTS load
@@ -472,7 +475,7 @@ def create_configure_save_dir():  # handles save location foler and copies dataf
         exit(1)
 
     # copies datafile to save location
-    if saveLocation != '':
+    if saveLocation != "":
         # creates save folder if necessary
         if not os.path.exists(saveLocation):
             os.makedirs(saveLocation)
@@ -494,14 +497,15 @@ def create_configure_save_dir():  # handles save location foler and copies dataf
         try:
             shutil.copy(mtsDataFile, saveLocation)
             os.rename(
-                f"{saveLocation}/{mtsDataFile}", f"{saveLocation}/DF MTS ({testInfo}).txt"
+                f"{saveLocation}/{mtsDataFile}",
+                f"{saveLocation}/DF MTS ({testInfo}).txt",
             )
             print(
                 f'Copied MTS file into "{saveLocation}" directory as "MTS Data File ({testInfo})"\n'
             )
         except shutil.SameFileError:
             print(f'MTS file already exists in "{saveLocation}" directory\n')
-            
+
 
 def new_file_names():  # creates chart titles and file names
     # plot with raw with mts data
@@ -511,11 +515,11 @@ def new_file_names():  # creates chart titles and file names
     # plot with raw, fixed, and mts data
     rawFixedMts = [f"Raw and Corrected Arduino Data vs MTS Data", " "]
 
-    if saveLocation == '':
+    if saveLocation == "":
         rawMts[1] = f"PLT {rawMts[0]} ({testInfo}).png"
         fixedMts[1] = f"PLT {fixedMts[0]} ({testInfo}).png"
         rawFixedMts[1] = f"PLT {rawFixedMts[0]} ({testInfo}).png"
-    else: 
+    else:
         rawMts[1] = f"{saveLocation}/PLT {rawMts[0]} ({testInfo}).png"
         fixedMts[1] = f"{saveLocation}/PLT {fixedMts[0]} ({testInfo}).png"
         rawFixedMts[1] = f"{saveLocation}/PLT {rawFixedMts[0]} ({testInfo}).png"
@@ -524,33 +528,34 @@ def new_file_names():  # creates chart titles and file names
 
 
 def write_info_file():
-    if saveLocation != '':
-        with open(f'{saveLocation}/info ({testInfo}).txt', 'w') as f:
-            f.write(f'created on {date.today()}\n\n')
-            f.write(f'ADC equation: [kg] = {adcSlope}*x + {adcOffset}')
+    if saveLocation != "":
+        with open(f"{saveLocation}/info ({testInfo}).txt", "w") as f:
+            f.write(f"created on {date.today()}\n\n")
+            f.write(f"ADC equation: [kg] = {adcSlope}*x + {adcOffset}")
     else:
-        with open(f'info ({testInfo}).txt', 'w') as f:
-            f.write(f'created on {date.today()}\n\n')
-            f.write(f'ADC equation: [kg] = {adcSlope}*x + {adcOffset}')        
+        with open(f"info ({testInfo}).txt", "w") as f:
+            f.write(f"created on {date.today()}\n\n")
+            f.write(f"ADC equation: [kg] = {adcSlope}*x + {adcOffset}")
 
 
 @Gooey(advanced=True, default_size=(730, 840))
-def main_argparse(): # main GUI (1st screen)
-    currentFileLocation = os. getcwd()
-    currentFolder = currentFileLocation.split('/')[-1]
-    parentFolder = currentFileLocation.split('/')[-2]
-    topTwoPath = f'{parentFolder}/{currentFolder}'
+def main_argparse():  # main GUI (1st screen)
+    currentFileLocation = os.getcwd()
+    currentFolder = currentFileLocation.split("/")[-1]
+    parentFolder = currentFileLocation.split("/")[-2]
+    topTwoPath = f"{parentFolder}/{currentFolder}"
 
     # argument parser
     parser = ArgumentParser()
-    #sensor type dropdown
+    # sensor type dropdown
     parser.add_argument(
-        dest = 'sensorType', 
-        default='FlexiForce', 
-        const='FlexiForce', 
-        nargs='?', 
+        dest="sensorType",
+        default="FlexiForce",
+        const="FlexiForce",
+        nargs="?",
         help="The type of sensor used in this test",
-        choices=['FlexiForce', 'Button Loadcell', 'Tall Loadcell'])
+        choices=["FlexiForce", "Button Loadcell", "Tall Loadcell"],
+    )
     # arduino datafile
     parser.add_argument(  # Arduino datafile location
         "-a",
@@ -580,7 +585,11 @@ def main_argparse(): # main GUI (1st screen)
     )
     # saving
     parser.add_argument(  # save location
-        "-l", "--saveLocation", dest="saveLocation", help=f"Save folder \n({topTwoPath}/___)", default=""
+        "-l",
+        "--saveLocation",
+        dest="saveLocation",
+        help=f"Save folder \n({topTwoPath}/___)",
+        default="",
     )  # log6/
     parser.add_argument(  # test info
         "-i", "--testInfo", dest="testInfo", help="Test info", default="script testing"
@@ -591,7 +600,7 @@ def main_argparse(): # main GUI (1st screen)
         "--errorPlot",
         dest="errorPlot",
         help="Plots error over load readings",
-        action='store_true',
+        action="store_true",
     )
     # tuning
     parser.add_argument(  # MTS time shift
@@ -611,57 +620,55 @@ def main_argparse(): # main GUI (1st screen)
         default=[4.5, 1.375],
         type=float,
     )
-    # lin eq 
+    # lin eq
     parser.add_argument(  # ADC slope
         "-x",
         "--adcSlope",
         dest="adcSlope",
-        help=f"ADC slope \n(y = \'m\'*x + b)",
-        default='0.0105',
+        help=f"ADC slope \n(y = 'm'*x + b)",
+        default="0.0105",
         type=float,
     )
     parser.add_argument(  # ADC offset
         "-b",
         "--adcOffset",
         dest="adcOffset",
-        help=f"ADC offset \n(y = m*x + \'b\')",
-        default='-105.0',
+        help=f"ADC offset \n(y = m*x + 'b')",
+        default="-105.0",
         type=float,
     )
-    # derv 
+    # derv
     parser.add_argument(  # derv threshold
         "-D",
         "--dervThresh",
         dest="dervThresh",
         help=f"Derivative threshold used to fix ADC data",
-        default='20',
+        default="20",
         type=float,
     )
-    
 
     args = parser.parse_args()
 
-    #sensor type 
+    # sensor type
     sensorType = args.sensorType
     # arduino
-    arduinoDataFile = f'{args.Arduino}.TXT'
+    arduinoDataFile = f"{args.Arduino}.TXT"
     print(arduinoDataFile)
     ardSepBy = args.ArduinoSep
     # MTS
-    mtsDataFile = f'{args.MTS}.txt'
+    mtsDataFile = f"{args.MTS}.txt"
     mtsSepBy = args.mtsSep
     mtsTimeShift = args.mtsShift
     blockLength, blockWidth = args.blockArea
     # saving
     testInfo = args.testInfo
     saveLocation = args.saveLocation
-    #plotting
+    # plotting
     errorPlotBool = args.errorPlot
 
     adcSlope = args.adcSlope
     adcOffset = args.adcOffset
     dervThresh = args.dervThresh
-
 
     return (
         currentFolder,
@@ -682,10 +689,12 @@ def main_argparse(): # main GUI (1st screen)
 
 
 def flexi_argparse():
-    pass 
+    pass
+
 
 def buttoncell__argparse():
     pass
+
 
 def tallcell_argparse():
     pass
@@ -693,7 +702,7 @@ def tallcell_argparse():
 
 if __name__ == "__main__":
     print("- - - - -  LoadAlgorythem2.0.py  - - - - -")
-    (   #makes vars from argparse global
+    (  # makes vars from argparse global
         currentFolder,
         arduinoDataFile,
         ardSepBy,
@@ -706,11 +715,11 @@ if __name__ == "__main__":
         saveLocation,
         adcSlope,
         adcOffset,
-        dervThresh, 
+        dervThresh,
         errorPlotBool,
     ) = main_argparse()
 
-    create_configure_save_dir() # creates and configures save directories
+    create_configure_save_dir()  # creates and configures save directories
     main_process()  # main process
-    write_info_file()   # write info file
+    write_info_file()  # write info file
     print("- - - - - - - - - - - - - - - - - - - - -")
