@@ -16,8 +16,9 @@ Senior Design - Hyster Yale Axial Load Monitoring
 * Redumentry error calculation
 
 # Pre-Processing Algorithm (deployed to hardware)
-## Arduino v2.0
-* Conducts onboard high and low pass filtering
+## [SDHY_Load_Cell_Datalogger](https://github.com/jOakley28/SDHY23/tree/main/SDHY_Load_Cell_Datalogger/SDHY_Load_Cell_Datalogger.ino)
+* Uses an Arduino Uno and HX711 Wheatstone bridge and ADC module
+* Outputs load in kg
 
 ## Arduino v1.0
 * Collects and writes raw to CSV for post-processing
