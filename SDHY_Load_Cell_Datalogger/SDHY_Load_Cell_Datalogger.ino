@@ -71,7 +71,7 @@ uint8_t clockPin = 3;
 uint8_t dataPin = 4;
 uint8_t GND = 5;
 
-float calibrationWeight = 11.354;  // weight to use for calibration
+float calibrationWeight = 100;  // weight to use for calibration
 
 //================================================ Setup Function ==================================================
 void setup() {
@@ -108,10 +108,10 @@ void setup() {
 
   // Select which sensor to read EEPROM value for
   if (digitalRead(selectorSwitch) == LOW) {
-    calibration = LoadStruct(0);  // load off EEPROM for larger load cell
+    calibration = LoadStruct(0);  // load EEPROM for larger load cell
     Serial.println("BIG load cell selected");
   } else {
-    calibration = LoadStruct(500);  // load off EEPROM for button cell
+    calibration = LoadStruct(500);  // load EEPROM for button cell
     Serial.println("SMALL load cell selected");
   }
 
@@ -122,9 +122,9 @@ void setup() {
     Serial.println("Preparing to tare the sensor");
     while (startTime - millis() < 5000) {
       digitalWrite(greenLED, HIGH);
-      delay(250);
+      delay(50);
       digitalWrite(greenLED, LOW);
-      delay(250);
+      delay(50);
     }
 
     Serial.println("Taring");
@@ -136,19 +136,12 @@ void setup() {
     Serial.print("Place ");
     Serial.print(calibrationWeight);
     Serial.println(" kg on the sensor");
-    while (startTime - millis() < 15000) {
-      digitalWrite(greenLED, HIGH);
-      delay(250);
-      digitalWrite(greenLED, LOW);
-      delay(250);
+
+    while (digitalRead(tareButton) == HIGH) {
+      analogWrite(greenLED, 255 * sin(millis() / 1000.0));
+      Serial.println("Waiting for button press");
     }
-    Serial.println("HURRY!!!");
-    while (millis() < 20000) {
-      digitalWrite(greenLED, HIGH);
-      delay(50);
-      digitalWrite(greenLED, LOW);
-      delay(50);
-    }
+
 
     Serial.println("Calibrating");
 
