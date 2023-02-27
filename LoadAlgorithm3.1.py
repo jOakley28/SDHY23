@@ -140,6 +140,11 @@ def import_arduino_data(arduinoDataFile, ardSepBy):  # get arduino data from CSV
         arduinoDataFile, sep=ardSepBy, header=None, low_memory=False
     )
 
+    arduino_data_df[1] = arduino_data_df[1].apply(
+        lambda x: x / scale
+    )  # scales by factor defined in argparse
+
+
     arduino_data_df[0] = arduino_data_df[0].apply(
         lambda x: x / 3600
     )  # converts column 0 from seconds to hours
@@ -688,7 +693,14 @@ def main_argparse():  # main GUI (1st screen)
         default="20",
         type=float,
     )
-
+    # scale factor (default n = 1) 
+    flexi_config_parser.add_argument(  # button load cell area
+        "--scale",
+        dest="scale",
+        help="Scale input by",
+        default="1",
+        type=int,
+    )
     """
     tall load cell side bar
     """
@@ -796,7 +808,14 @@ def main_argparse():  # main GUI (1st screen)
         default="0.762",
         type=float,
     )
-
+    # scale factor (default n = 1) 
+    tallLC_config_parser.add_argument(  # button load cell area
+        "--scale",
+        dest="scale",
+        help="Scale input by",
+        default="1",
+        type=int,
+    )
     """
     button load cell side bar
     """
@@ -904,7 +923,14 @@ def main_argparse():  # main GUI (1st screen)
         default="0.486",
         type=float,
     ) 
-
+    # scale factor (default n = 1) 
+    buttonLC_config_parser.add_argument(  # button load cell area
+        "--scale",
+        dest="scale",
+        help="Scale input by",
+        default="1",
+        type=int,
+    )
     """
     parse arguments
     """
@@ -933,6 +959,7 @@ def main_argparse():  # main GUI (1st screen)
     slope = args.slope
     offset = args.offset
     sensorArea = args.sensorArea
+    scale = args.scale
 
     return (
         # saving
@@ -959,6 +986,7 @@ def main_argparse():  # main GUI (1st screen)
         dervThresh,
         # plotting
         errorPlotBool,
+        scale,
     )
 
 
@@ -989,6 +1017,7 @@ if __name__ == "__main__":
         dervThresh,
         # plotting
         errorPlotBool,
+        scale,
     ) = main_argparse()
 
     create_configure_save_dir()  # creates and configures save directories
