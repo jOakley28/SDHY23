@@ -156,6 +156,9 @@ def main_process():
         rawAdcDataBlockError[1] = convert_adc_to_kg(rawAdcDataBlockError[1])
         correctedAdcDataBlockError[1] = convert_adc_to_kg(correctedAdcDataBlockError[1])
 
+        # convert error to block frame
+        rawAdcDataBlockError[1], correctedAdcDataBlockError[1], mtsDataBlockError[1] = laod_cell_to_block_frame(rawAdcDataBlockError[1], correctedAdcDataBlockError[1], mtsDataBlockError[1])
+
         # calculate percent error
         print("Estimating error...")
         rAdcMtsError, rAvgError, rEbtw = errorCalculation(
@@ -226,6 +229,9 @@ def main_process():
         rawAdcDataRearAxleError[1] = convert_adc_to_kg(rawAdcDataRearAxleError[1])
         correctedAdcDataRearAxleError[1] = convert_adc_to_kg(correctedAdcDataRearAxleError[1])
 
+        # convert error to axle frame
+        rawAdcDataRearAxleError[1], correctedAdcDataRearAxleError[1], mtsDataRearAxleError[1] = laod_cell_to_rearAxle_frame(rawAdcDataRearAxleError[1], correctedAdcDataRearAxleError[1], mtsDataRearAxleError[1])
+
         # calculate percent error
         print("Estimating error...")
         rAdcMtsError, rAvgError, rEbtw = errorCalculation(
@@ -247,7 +253,7 @@ def main_process():
         # plot data 
         print("Plotting data...")
         rawMts_str, correctedMts_str, rawcorrectedMts_str = new_file_names('rearAxle')
-        ymax = 110
+        ymax = 3500
         plot_two(
             rawAdcDataRearAxle,
             mtsDataRearAxle,
@@ -309,19 +315,19 @@ def laod_cell_to_rearAxle_frame(raw_arduino_load_cell_frame,corrected_arduino_lo
     # aera ratio 
     blockArea = blockLength * blockWidth  # difined by user (in^2)
     areaRatio = blockArea / sensorArea  # from data sheet (in^2)
-    axel_to_fork = 1/1000 # from FBD
+    block_ratio = 1/0.241 # from FBD
     
     raw_arduino_to_rearAxle = pd.DataFrame()
     raw_arduino_to_rearAxle[1] = raw_arduino_load_cell_frame
-    raw_arduino_rearAxle_frame = raw_arduino_to_rearAxle[1].apply(lambda x: x*areaRatio*axel_to_fork)
+    raw_arduino_rearAxle_frame = raw_arduino_to_rearAxle[1].apply(lambda x: x*areaRatio*block_ratio)
 
     corrected_arduino_to_rearAxle = pd.DataFrame()
     corrected_arduino_to_rearAxle[1] = corrected_arduino_load_cell_frame
-    corrected_arduino_rearAxle_frame = corrected_arduino_to_rearAxle[1].apply(lambda x: x*areaRatio*axel_to_fork)
+    corrected_arduino_rearAxle_frame = corrected_arduino_to_rearAxle[1].apply(lambda x: x*areaRatio*block_ratio)
 
     mts_to_rearAxle = pd.DataFrame()
     mts_to_rearAxle[1] = mts_load_cell_frame
-    mts_rearAxle_frame = mts_to_rearAxle[1].apply(lambda x: x*areaRatio*axel_to_fork)
+    mts_rearAxle_frame = mts_to_rearAxle[1].apply(lambda x: x*areaRatio*block_ratio)
     return raw_arduino_rearAxle_frame, corrected_arduino_rearAxle_frame, mts_rearAxle_frame
 
 
@@ -936,7 +942,7 @@ def main_argparse():  # main GUI (1st screen)
         dest="scale",
         help="Scale input by",
         default="1",
-        type=int,
+        type=float,
     )
     
 
@@ -1080,7 +1086,7 @@ def main_argparse():  # main GUI (1st screen)
         dest="scale",
         help="Scale input by",
         default="1",
-        type=int,
+        type=float,
     )
     
     
@@ -1222,7 +1228,7 @@ def main_argparse():  # main GUI (1st screen)
         dest="scale",
         help="Scale input by",
         default="1",
-        type=int,
+        type=float,
     )
    
 
